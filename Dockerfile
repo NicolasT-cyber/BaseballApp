@@ -4,14 +4,11 @@ FROM denoland/deno:2.4.2 as builder
 
 WORKDIR /app
 
-# Fichiers de dépendances
-COPY deno.json drizzle.config.ts ./
+# Copier le code source du projet
+COPY . .
 
 # Mettre en cache les dépendances
 RUN deno cache --node-modules-dir api/main.ts
-
-# Copier le reste du code source du projet
-COPY . .
 
 # Si on veut repartir de zéro, on peut supprimer la base de données locale
 # RUN rm -f baseball.db

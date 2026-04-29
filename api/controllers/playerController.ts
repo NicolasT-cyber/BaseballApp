@@ -29,7 +29,7 @@ export const getPlayerById = async (ctx: RouterContext) => {
 
 export const createPlayer = async (ctx: RouterContext) => {
   try {
-    const body = await ctx.request.body().value;
+    const body = await ctx.request.body.json();
     const newPlayerId = crypto.randomUUID();
     const newPlayer: Player = {
       id: newPlayerId,
@@ -58,7 +58,7 @@ export const createPlayer = async (ctx: RouterContext) => {
 export const updatePlayer = async (ctx: RouterContext) => {
   const { id } = ctx.params;
   try {
-    const body = await ctx.request.body().value;
+    const body = await ctx.request.body.json();
     const updatedData = {
       firstName: body.firstName,
       lastName: body.lastName,

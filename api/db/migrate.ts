@@ -15,8 +15,8 @@ async function runMigrations() {
       );
     `);
 
-    const executed = db.prepare("SELECT name FROM __migrations").all();
-    const executedNames = new Set(executed.map(row => row[0]));
+    const executed = db.prepare("SELECT name FROM __migrations").values();
+    const executedNames = new Set(executed.map((row) => row[0]));
 
     for await (const dirEntry of Deno.readDir(migrationsFolder)) {
       if (dirEntry.isFile && dirEntry.name.endsWith('.sql')) {
@@ -24,7 +24,13 @@ async function runMigrations() {
         if (!executedNames.has(migrationName)) {
           console.log(`Executing migration: ${migrationName}`);
           const sqlContent = await Deno.readTextFile(path.join(migrationsFolder, migrationName));
-          db.exec(sqlContent);
+          const statements = sqlContent
+            .split('--> statement-breakpoint')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0);
+          for (const stmt of statements) {
+            db.exec(stmt);
+          }
           db.prepare("INSERT INTO __migrations (name, executed_at) VALUES (?, ?)").run(
             migrationName,
             new Date().toISOString(),
