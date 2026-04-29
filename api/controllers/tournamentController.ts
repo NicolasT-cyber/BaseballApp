@@ -1,9 +1,11 @@
 import { RouterContext } from "https://deno.land/x/oak@v17.1.5/mod.ts";
-import { Tournament, Match, Team } from "../models/tournament.ts"; // Assuming Tournament, Match, Team are defined here or in separate files
+import { Tournament } from "../models/tournament.ts";
+import { Match } from "../models/match.ts";
+import { Team } from "../models/team.ts";
 import tournamentService from "../services/tournamentService.ts";
 import { db } from "../db/database.ts";
 import * as schema from "../db/schema.ts";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export const getTournaments = async (ctx: RouterContext) => {
   try {
@@ -65,7 +67,7 @@ export const getTournamentById = async (ctx: RouterContext) => {
 };
 
 export const createTournament = async (ctx: RouterContext) => {
-  const body = await ctx.request.body().value;
+  const body = await ctx.request.body.json();
   const newTournamentId = crypto.randomUUID();
 
   try {
@@ -144,7 +146,7 @@ export const createTournament = async (ctx: RouterContext) => {
 export const updateTournament = async (ctx: RouterContext) => {
   const { id } = ctx.params;
   try {
-    const body = await ctx.request.body().value;
+    const body = await ctx.request.body.json();
     const updatedData = {
       name: body.name,
       date: new Date(body.date).toISOString(),
@@ -201,7 +203,7 @@ export const getTournamentMatches = async (ctx: RouterContext) => {
 export const addTournamentMatch = async (ctx: RouterContext) => {
     const { id } = ctx.params;
     try {
-        const body = await ctx.request.body().value;
+        const body = await ctx.request.body.json();
         const newMatchId = crypto.randomUUID();
         const matchToInsert = {
             id: newMatchId,
@@ -233,7 +235,7 @@ export const addTournamentMatch = async (ctx: RouterContext) => {
 export const updateTournamentMatch = async (ctx: RouterContext) => {
     const { id, idMatch } = ctx.params;
     try {
-        const body = await ctx.request.body().value;
+        const body = await ctx.request.body.json();
         const updatedData = {
             team1Id: body.team1Id,
             team2Id: body.team2Id,
@@ -241,7 +243,7 @@ export const updateTournamentMatch = async (ctx: RouterContext) => {
             time: body.time,
             score: body.score || null,
         };
-        const result = await db.update(schema.matches).set(updatedData).where(eq(schema.matches.id, idMatch)).where(eq(schema.matches.tournamentId, id));
+        const result = await db.update(schema.matches).set(updatedData).where(and(eq(schema.matches.id, idMatch), eq(schema.matches.tournamentId, id)));
 
         if (result.rowsAffected && result.rowsAffected > 0) {
             const updatedMatch = await db.query.matches.findFirst({ where: eq(schema.matches.id, idMatch) });

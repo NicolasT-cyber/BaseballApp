@@ -1,5 +1,4 @@
 import { RouterContext } from "https://deno.land/x/oak@v17.1.5/mod.ts";
-import { Team } from "../models/team.ts";
 import { db } from "../db/database.ts";
 import * as schema from "../db/schema.ts";
 import { eq } from "drizzle-orm";
@@ -43,17 +42,21 @@ export const getTeamById = async (ctx: RouterContext) => {
 
 export const createTeam = async (ctx: RouterContext) => {
   try {
-    const body = await ctx.request.body().value;
+    const body = await ctx.request.body.json();
     const newTeamId = crypto.randomUUID();
-    const newTeam: Team = {
+    await db.insert(schema.teams).values({
       id: newTeamId,
       name: body.name,
       city: body.city,
-      players: [], // Players are added separately
-    };
-    await db.insert(schema.teams).values(newTeam);
+    });
+    const newTeam = await db.query.teams.findFirst({ where: eq(schema.teams.id, newTeamId) });
     ctx.response.status = 201;
-    ctx.response.body = newTeam;
+    ctx.response.body = {
+      id: newTeam?.id,
+      name: newTeam?.name,
+      city: newTeam?.city,
+      players: [],
+    };
   } catch (error) {
     ctx.response.status = 500;
     ctx.response.body = { message: "Failed to create team", error: error.message };
@@ -63,7 +66,7 @@ export const createTeam = async (ctx: RouterContext) => {
 export const updateTeam = async (ctx: RouterContext) => {
   const { id } = ctx.params;
   try {
-    const body = await ctx.request.body().value;
+    const body = await ctx.request.body.json();
     const updatedData = {
       name: body.name,
       city: body.city,
